@@ -1,6 +1,7 @@
 package pl.iwona.TaskProcessingConsumer.domain;
 
-public enum TaskEventType {
+public enum TaskType {
     NEW,
-    LIST
+    IN_PROGRESS,
+    DONE;
 }
