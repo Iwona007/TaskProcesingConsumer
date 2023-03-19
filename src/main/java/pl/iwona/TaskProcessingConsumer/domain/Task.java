@@ -30,7 +30,8 @@ public class Task {
     private String result;
 
     private String status;
-//    @OneToOne
-//    @JoinColumn(name = "taskEventId")
-//    private TaskEvent taskEvent;
+
+    public String getResult() {
+        return getPattern() + ", " + getInput();
+    }
 }

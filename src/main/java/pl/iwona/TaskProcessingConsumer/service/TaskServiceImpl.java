@@ -9,6 +9,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import pl.iwona.TaskProcessingConsumer.domain.Task;
 import pl.iwona.TaskProcessingConsumer.domain.TaskType;
+import pl.iwona.TaskProcessingConsumer.domain.dto.TaskDto;
 import pl.iwona.TaskProcessingConsumer.domain.dto.TaskResultStatusDto;
 import pl.iwona.TaskProcessingConsumer.exception.TaskNotExist;
 import pl.iwona.TaskProcessingConsumer.mapper.TaskMapper;
@@ -31,7 +32,7 @@ public class TaskServiceImpl {
     @Autowired
     private TaskConsumerRepository taskConsumerRepository;
 
-    public void processTaskEvent(ConsumerRecord<Integer, String> consumerRecord) {
+    public Task processTaskEvent(ConsumerRecord<Integer, String> consumerRecord) {
         try {
             Task task = this.objectMapper.readValue(consumerRecord.value(), Task.class);
             log.info("taskEvent: {} ", task);
@@ -46,7 +47,7 @@ public class TaskServiceImpl {
                 // daje tread sleep)
                 Task taskBestMatch = findBestMatch(taskInProgress);
                 // 4. Zapisz taska ze statusem DONE + zapisz wyniki przetwarzenia też z taskiem
-                updateTaskToDone(taskBestMatch);
+                return updateTaskToDone(taskBestMatch);
 
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -55,14 +56,18 @@ public class TaskServiceImpl {
             throw new RuntimeException(e);
         }
     }
+
     private Task findTaskById(Integer taskId) {
         final Optional<Task> findTaskById = taskConsumerRepository.findById(taskId);
+        log.info("in methode");
         if (findTaskById.isPresent()) {
+            log.info("in if");
             return findTaskById.get();
         } else {
             throw new TaskNotExist("task not exist");
         }
     }
+
     private Task updateTaskToInProgress(Task foundedTask) {
         foundedTask.setTaskId(foundedTask.getTaskId());
         foundedTask.setPattern(foundedTask.getPattern());
@@ -71,6 +76,7 @@ public class TaskServiceImpl {
         foundedTask.setStatus("10%");
         return taskConsumerRepository.save(foundedTask);
     }
+
     private Task findBestMatch(Task task) {
         String pattern = task.getPattern();
         String input = task.getInput();
@@ -94,7 +100,7 @@ public class TaskServiceImpl {
                         .pattern(task.getPattern())
                         .position(position)
                         .typos(typos)
-                        .result(position +", " + typos)
+                        .result(position + ", " + typos)
                         .status("50%")
                         .taskType(task.getTaskType())
                         .build();
@@ -115,6 +121,7 @@ public class TaskServiceImpl {
         }
         return counter;
     }
+
     private Task updateTaskToDone(Task task) {
         task.setTaskId(task.getTaskId());
         task.setInput(task.getInput());
@@ -123,5 +130,17 @@ public class TaskServiceImpl {
         task.setStatus("100%");
         task.setTaskType(TaskType.DONE);
         return taskConsumerRepository.save(task);
+    }
+
+    public Optional<TaskDto> getTaskWithStatusAndResult(Integer taskId) {
+
+        return taskConsumerRepository
+                .findById(taskId)
+                .map(task -> {
+                    return TaskDto.builder()
+                            .status(task.getStatus())
+                            .result(task.getResult())
+                            .build();
+                });
     }
 }
