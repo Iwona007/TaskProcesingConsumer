@@ -13,7 +13,7 @@ import java.io.Serializable;
 @Data
 @Builder
 @Entity
-//@Table
+@Table(name = "tasks")
 public class Task {
 
     @Id

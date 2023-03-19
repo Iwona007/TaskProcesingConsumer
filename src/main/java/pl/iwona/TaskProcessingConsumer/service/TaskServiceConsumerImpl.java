@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import pl.iwona.TaskProcessingConsumer.domain.Task;
 import pl.iwona.TaskProcessingConsumer.domain.TaskType;
@@ -19,19 +18,23 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-public class TaskServiceImpl {
+public class TaskServiceConsumerImpl implements TaskServiceConsumer {
+
+    private final TaskMapper taskMapper;
+
+    private final ObjectMapper objectMapper;
+
+    private final TaskConsumerRepository taskConsumerRepository;
 
     @Autowired
-    private TaskMapper taskMapper;
-    @Autowired
-    private ObjectMapper objectMapper;
+    public TaskServiceConsumerImpl(TaskMapper taskMapper, ObjectMapper objectMapper,
+                                   TaskConsumerRepository taskConsumerRepository) {
+        this.taskMapper = taskMapper;
+        this.objectMapper = objectMapper;
+        this.taskConsumerRepository = taskConsumerRepository;
+    }
 
-    @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
-
-    @Autowired
-    private TaskConsumerRepository taskConsumerRepository;
-
+    @Override
     public Task processTaskEvent(ConsumerRecord<Integer, String> consumerRecord) {
         try {
             Task task = this.objectMapper.readValue(consumerRecord.value(), Task.class);
@@ -55,6 +58,19 @@ public class TaskServiceImpl {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Optional<TaskDto> getTaskWithStatusAndResult(Integer taskId) {
+
+        return taskConsumerRepository
+                .findById(taskId)
+                .map(task -> {
+                    return TaskDto.builder()
+                            .status(task.getStatus())
+                            .result(task.getResult())
+                            .build();
+                });
     }
 
     private Task findTaskById(Integer taskId) {
@@ -130,17 +146,5 @@ public class TaskServiceImpl {
         task.setStatus("100%");
         task.setTaskType(TaskType.DONE);
         return taskConsumerRepository.save(task);
-    }
-
-    public Optional<TaskDto> getTaskWithStatusAndResult(Integer taskId) {
-
-        return taskConsumerRepository
-                .findById(taskId)
-                .map(task -> {
-                    return TaskDto.builder()
-                            .status(task.getStatus())
-                            .result(task.getResult())
-                            .build();
-                });
     }
 }
