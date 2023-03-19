@@ -6,13 +6,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.io.Serializable;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 @Builder
 @Entity
-//@Table
+@Table(name = "tasks")
 public class Task {
 
     @Id
@@ -23,17 +24,10 @@ public class Task {
 
     private String pattern;
 
+    @Enumerated(EnumType.STRING)
+    private TaskType taskType;
+
     private String result;
 
     private String status;
-    @OneToOne
-    @JoinColumn(name = "taskEventId")
-    private TaskEvent taskEvent;
-
-    public Task(String input, String pattern, String result, String status) {
-        this.input = input;
-        this.pattern = pattern;
-        this.result = result;
-        this.status = status;
-    }
 }

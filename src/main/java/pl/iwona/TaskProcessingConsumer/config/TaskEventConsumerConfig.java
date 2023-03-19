@@ -9,9 +9,9 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 
-@Configuration
-@EnableKafka
 @Slf4j
+@EnableKafka
+@Configuration
 public class TaskEventConsumerConfig {
 
     public static final Integer CONCURRENT_CONSUMERS_NUMBER = 3;
