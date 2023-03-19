@@ -15,14 +15,11 @@ import pl.iwona.TaskProcessingConsumer.service.TaskServiceImpl;
 public class TaskEventsConsumer {
 
     @Autowired
-    TaskServiceImpl taskService;
+    private TaskServiceImpl taskService;
 
     @KafkaListener(topics = {"task-events"}, groupId = "{tasks-events-listener-group}")
     public void onMessage(ConsumerRecord<Integer, String> consumerRecord) throws JsonProcessingException {
         log.info("ConsumerRecord: {} ", consumerRecord);
         taskService.processTaskEvent(consumerRecord);
     }
-
-
-
 }
