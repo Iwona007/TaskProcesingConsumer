@@ -1,15 +1,16 @@
-package pl.iwona.TaskProcessingConsumer.service;
+package pl.iwona.TaskProcessingConsumer.logic.service;
 
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import pl.iwona.TaskProcessingConsumer.domain.Task;
 import pl.iwona.TaskProcessingConsumer.domain.dto.TaskDto;
 
-import java.util.Optional;
-
+/**
+ * TaskService For consumer Kafka
+ */
 public interface TaskServiceConsumer {
 
     Task processTaskEvent(ConsumerRecord<Integer, String> consumerRecord);
 
-    Optional<TaskDto> getTaskWithStatusAndResult(Integer taskId);
+    TaskDto getTaskWithStatusAndResult(Integer taskId);
 }

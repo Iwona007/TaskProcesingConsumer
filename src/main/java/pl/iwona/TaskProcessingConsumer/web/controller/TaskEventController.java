@@ -1,4 +1,4 @@
-package pl.iwona.TaskProcessingConsumer.controller;
+package pl.iwona.TaskProcessingConsumer.web.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,16 +9,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pl.iwona.TaskProcessingConsumer.domain.dto.TaskDto;
-import pl.iwona.TaskProcessingConsumer.service.TaskServiceConsumer;
+import pl.iwona.TaskProcessingConsumer.logic.service.TaskServiceConsumer;
 
-import java.util.Optional;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 @Slf4j
 @RestController
 @RequestMapping("/app")
 public class TaskEventController {
 
-    private TaskServiceConsumer taskServiceConsumer;
+    private final TaskServiceConsumer taskServiceConsumer;
 
     @Autowired
     public TaskEventController(TaskServiceConsumer taskServiceConsumer) {
@@ -26,8 +27,8 @@ public class TaskEventController {
     }
 
     @GetMapping("/result/{taskId}")
-    public ResponseEntity<Optional<TaskDto>> getTaskWithStatusAndResult(@PathVariable Integer taskId) {
-        final Optional<TaskDto> task = taskServiceConsumer.getTaskWithStatusAndResult(taskId);
+    public ResponseEntity<TaskDto> getTaskWithStatusAndResult(@Min(1) @NotNull @PathVariable Integer taskId) {
+        final TaskDto task = taskServiceConsumer.getTaskWithStatusAndResult(taskId);
         log.info("result and status: {}", task);
         return new ResponseEntity<>(task, HttpStatus.FOUND);
     }

@@ -30,8 +30,4 @@ public class Task {
     private String result;
 
     private String status;
-
-    public String getResult() {
-        return getPattern() + ", " + getInput();
-    }
 }

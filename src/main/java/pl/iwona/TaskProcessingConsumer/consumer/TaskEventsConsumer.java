@@ -6,12 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import pl.iwona.TaskProcessingConsumer.domain.Task;
-import pl.iwona.TaskProcessingConsumer.service.TaskServiceConsumer;
+import pl.iwona.TaskProcessingConsumer.logic.service.TaskServiceConsumer;
 @Slf4j
 @Component
 public class TaskEventsConsumer {
 
-    private TaskServiceConsumer taskServiceConsumer;
+    private final TaskServiceConsumer taskServiceConsumer;
     @Autowired
     public TaskEventsConsumer(TaskServiceConsumer taskServiceConsumer) {
         this.taskServiceConsumer = taskServiceConsumer;

@@ -6,11 +6,14 @@ import lombok.Getter;
 import lombok.Setter;
 import pl.iwona.TaskProcessingConsumer.domain.TaskType;
 
+/**
+ * Data transfer object for Task Entity
+ */
 @Getter
 @Setter
 @Builder
 @AllArgsConstructor
-public class TaskResultStatusDto {
+public class TaskResulDto {
 
     private int taskId;
 

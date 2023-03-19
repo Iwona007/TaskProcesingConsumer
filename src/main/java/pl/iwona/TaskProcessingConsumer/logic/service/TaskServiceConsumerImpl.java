@@ -1,4 +1,4 @@
-package pl.iwona.TaskProcessingConsumer.service;//package pl.iwona.KafkaTask.service;
+package pl.iwona.TaskProcessingConsumer.logic.service;//package pl.iwona.KafkaTask.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,18 +7,19 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import pl.iwona.TaskProcessingConsumer.domain.Task;
+import pl.iwona.TaskProcessingConsumer.domain.TaskProgress;
 import pl.iwona.TaskProcessingConsumer.domain.TaskType;
 import pl.iwona.TaskProcessingConsumer.domain.dto.TaskDto;
-import pl.iwona.TaskProcessingConsumer.domain.dto.TaskResultStatusDto;
-import pl.iwona.TaskProcessingConsumer.exception.TaskNotExist;
-import pl.iwona.TaskProcessingConsumer.mapper.TaskMapper;
-import pl.iwona.TaskProcessingConsumer.repository.TaskConsumerRepository;
+import pl.iwona.TaskProcessingConsumer.domain.dto.TaskResulDto;
+import pl.iwona.TaskProcessingConsumer.logic.exception.AppRuntimeException;
+import pl.iwona.TaskProcessingConsumer.domain.mapper.TaskMapper;
+import pl.iwona.TaskProcessingConsumer.logic.repository.TaskConsumerRepository;
 
 import java.util.Optional;
 
 @Slf4j
 @Service
-public class TaskServiceConsumerImpl implements TaskServiceConsumer {
+class TaskServiceConsumerImpl implements TaskServiceConsumer {
 
     private final TaskMapper taskMapper;
 
@@ -39,48 +40,38 @@ public class TaskServiceConsumerImpl implements TaskServiceConsumer {
         try {
             Task task = this.objectMapper.readValue(consumerRecord.value(), Task.class);
             log.info("taskEvent: {} ", task);
-            //0 0. wyszukja w bazie danych czy taski z podanymi imputamia i paternami ze statusem "done" jeśli znajdziesz zwróć identyfikator teo zadania.
-            //1 Odczytaj z bazy taska po Id
             Task foundedTask = findTaskById(task.getTaskId());
-//       2 Zapisz taska ze statusem in Progres
-            try {
+            try{
                 Task taskInProgress = updateTaskToInProgress(foundedTask);
-                Thread.sleep(2000);
-                // 3. Wyszukiwanie wzorca (kolumna progess, przejde 1 etap to zapisuje 25%, i przejde kolejny etap to zapisuje 50% i
-                // daje tread sleep)
+                log.info("taskInProgress: {}", taskInProgress);
+                Thread.sleep(15000);
                 Task taskBestMatch = findBestMatch(taskInProgress);
-                // 4. Zapisz taska ze statusem DONE + zapisz wyniki przetwarzenia też z taskiem
+                log.info("taskBestMatch with done status: {}", taskBestMatch);
                 return updateTaskToDone(taskBestMatch);
 
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
             }
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+        } catch (JsonProcessingException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
     @Override
-    public Optional<TaskDto> getTaskWithStatusAndResult(Integer taskId) {
-
-        return taskConsumerRepository
-                .findById(taskId)
-                .map(task -> {
-                    return TaskDto.builder()
-                            .status(task.getStatus())
-                            .result(task.getResult())
-                            .build();
-                });
+    public TaskDto getTaskWithStatusAndResult(Integer taskId) {
+        var task = findTaskById(taskId);
+        return TaskDto.builder()
+                .status(task.getStatus())
+                .result(task.getResult())
+                .build();
     }
 
     private Task findTaskById(Integer taskId) {
         final Optional<Task> findTaskById = taskConsumerRepository.findById(taskId);
-        log.info("in methode");
         if (findTaskById.isPresent()) {
-            log.info("in if");
             return findTaskById.get();
         } else {
-            throw new TaskNotExist("task not exist");
+            throw new AppRuntimeException("task not exist");
         }
     }
 
@@ -89,7 +80,8 @@ public class TaskServiceConsumerImpl implements TaskServiceConsumer {
         foundedTask.setPattern(foundedTask.getPattern());
         foundedTask.setInput(foundedTask.getInput());
         foundedTask.setTaskType(TaskType.IN_PROGRESS);
-        foundedTask.setStatus("10%");
+        foundedTask.setStatus(TaskProgress.TEN.getPercentage());
+        log.info("task in progress status: {} ", foundedTask.getStatus());
         return taskConsumerRepository.save(foundedTask);
     }
 
@@ -100,36 +92,52 @@ public class TaskServiceConsumerImpl implements TaskServiceConsumer {
         int position;
         int typos = patternLength;
 
-        Task save = null;
-
+        Task saveTaskWithBestMatch = null;
+        try {
         for (int i = 0; i <= input.length() - patternLength; i++) {
             String currentSubstring = input.substring(i, patternLength + i);
             int currentTypos = countTypos(pattern, currentSubstring);
-            log.info("in the loop");
+            log.info("in the loop best match");
             if (currentTypos < typos) {
                 typos = currentTypos;
                 position = i;
-                TaskResultStatusDto buildtaskResultStatusDto = TaskResultStatusDto
-                        .builder()
-                        .taskId(task.getTaskId())
-                        .input(task.getInput())
-                        .pattern(task.getPattern())
-                        .position(position)
-                        .typos(typos)
-                        .result(position + ", " + typos)
-                        .status("50%")
-                        .taskType(task.getTaskType())
-                        .build();
-                save = taskConsumerRepository.save(taskMapper
-                        .mapTaskResultStatusDtoToTaskEntity(buildtaskResultStatusDto));
+                saveTaskWithBestMatch = saveTaskWithBestMatch(task, position, typos);
             }
         }
+            Thread.sleep(15000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         log.info("get out loop");
-        return save;
+        return saveTaskWithBestMatch;
+    }
+
+    private Task saveTaskWithBestMatch(Task task, int position, int typos) {
+        Task saveTaskWithBestMatch;
+        try {
+        TaskResulDto buildtaskResulDto = TaskResulDto
+                .builder()
+                .taskId(task.getTaskId())
+                .input(task.getInput())
+                .pattern(task.getPattern())
+                .position(position)
+                .typos(typos)
+                .result(position + ", " + typos)
+                .status(TaskProgress.FIFTY.getPercentage())
+                .taskType(task.getTaskType())
+                .build();
+        saveTaskWithBestMatch = taskConsumerRepository.save(taskMapper
+                .mapTaskResultStatusDtoToTaskEntity(buildtaskResulDto));
+            log.info("task with the best match: {} ", saveTaskWithBestMatch);
+            Thread.sleep(15000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        return saveTaskWithBestMatch;
     }
 
     private int countTypos(String pattern, String input) {
-        int counter = 0;
+        var counter = 0;
         for (int i = 0; i < pattern.length(); i++) {
             if (pattern.charAt(i) != input.charAt(i)) {
                 counter++;
@@ -138,13 +146,15 @@ public class TaskServiceConsumerImpl implements TaskServiceConsumer {
         return counter;
     }
 
-    private Task updateTaskToDone(Task task) {
+    private Task updateTaskToDone(Task task) throws InterruptedException {
         task.setTaskId(task.getTaskId());
         task.setInput(task.getInput());
         task.setPattern(task.getPattern());
         task.setResult(task.getResult());
-        task.setStatus("100%");
+        task.setStatus(TaskProgress.ONE_HUNDRED.getPercentage());
         task.setTaskType(TaskType.DONE);
+        log.info("task with status: {}", task.getStatus());
+        Thread.sleep(15000);
         return taskConsumerRepository.save(task);
     }
 }
