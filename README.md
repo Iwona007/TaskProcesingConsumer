@@ -1,6 +1,6 @@
 # TaskProcessingConsumer
 ## About project
-This id a demo application - consumer part - for CDQ interview purposes.
+This id a demo Kafka Consumer application.
 
 ## Prerequisites
 The following tools are required to start the application:
