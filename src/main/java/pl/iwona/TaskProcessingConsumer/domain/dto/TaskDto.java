@@ -15,15 +15,21 @@ import lombok.Setter;
 @AllArgsConstructor
 public class TaskDto {
 
-    private String result;
+    private Integer position;
+
+    private Integer typos;
 
     private String status;
 
+    private String result;
+
     @Override
     public String toString() {
-        return "TaskDTO{" +
-                "result='" + result + '\'' +
+        return "TaskDto{" +
+                "position=" + position +
+                ", typos=" + typos +
                 ", status='" + status + '\'' +
+                ", result='" + result + '\'' +
                 '}';
     }
 }

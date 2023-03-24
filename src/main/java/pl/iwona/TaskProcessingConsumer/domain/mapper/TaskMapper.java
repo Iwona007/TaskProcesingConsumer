@@ -1,8 +1,8 @@
 package pl.iwona.TaskProcessingConsumer.domain.mapper;
 
 import org.mapstruct.Mapper;
-import pl.iwona.TaskProcessingConsumer.domain.Task;
 import pl.iwona.TaskProcessingConsumer.domain.dto.TaskDto;
+import pl.iwona.TaskProcessingConsumer.domain.entity.TaskEntity;
 import pl.iwona.TaskProcessingConsumer.domain.dto.TaskResulDto;
 
 /**
@@ -11,5 +11,9 @@ import pl.iwona.TaskProcessingConsumer.domain.dto.TaskResulDto;
 @Mapper(componentModel = "spring")
 public interface TaskMapper {
 
-    Task mapTaskResultStatusDtoToTaskEntity(TaskResulDto taskResulDto);
+    TaskEntity mapTaskResultStatusDtoToTaskEntity(TaskResulDto taskResulDto);
+
+    TaskDto mapTaskEntityToTaskDto(TaskDto taskWithStatusAndResult);
+
+
 }
