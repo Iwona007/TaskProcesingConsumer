@@ -1,6 +1,6 @@
 # TaskProcessingConsumer
 ## About project
-This id a demo Kafka Consumer application.
+This is a demo Kafka Consumer application.
 
 ## Prerequisites
 The following tools are required to start the application:
@@ -23,7 +23,7 @@ git clone https://github.com/Iwona007/TaskProcesingConsumer.git
 When docker from TaskProcessingProducer is running, the TaskProcessingConsumer can be started from IDEA
 
 ## 3 How it works
-When TaskProcessingProducer sent post request, please check log consumer log console to see message for examle:
+When TaskProcessingProducer sent post request, please check log consumer in log console to see message for examle:
 taskEvent: Task(taskId=1, input=ADBCDEF, pattern=ABC, taskType=NEW, result=ABC, ADBCDEF, status=0%) 
 When application is sleeping you can check progress in the database. Also log console has all changes logged
 as well.
